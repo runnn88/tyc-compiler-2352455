@@ -173,7 +173,7 @@ The following is a list of **valid** operators along with their meaning. Note th
 
 ### Separator
 
-The following characters are the **separators**: left square bracket (`[`), right square bracket (`]`), left brace (`{`), right brace (`}`), left parenthesis (`(`), right parenthesis (`)`), semicolon (`;`), and comma (`,`).
+The following characters are the **separators**: left square bracket (`[`), right square bracket (`]`), left brace (`{`), right brace (`}`), left parenthesis (`(`), right parenthesis (`)`), semicolon (`;`), comma (`,`), and colon (`:`).
 
 ### Literal
 

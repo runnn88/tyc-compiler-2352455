@@ -25,3 +25,6 @@ env/
 reports/
 *.class
 *.j
+
+
+*.test_gen

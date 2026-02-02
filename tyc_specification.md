@@ -105,7 +105,7 @@ void main() {
 
 ### Character Set
 
-The character set of TyC is ASCII. Blank (`' '`), tab (`'\t'`), form feed (i.e., the ASCII FF) (`'\f'`), carriage return (i.e., the ASCII CR – `'\r'`) and newline (i.e., the ASCII LF – `'\n'`) are whitespace characters. The `'\n'` is used as newline character in TyC.
+The character set of TyC is extended ASCII (characters with code points 0-255). Blank (`' '`), tab (`'\t'`), form feed (i.e., the ASCII FF) (`'\f'`), carriage return (i.e., the ASCII CR – `'\r'`) and newline (i.e., the ASCII LF – `'\n'`) are whitespace characters. The `'\n'` is used as newline character in TyC.
 
 This definition of lines can be used to determine the line numbers produced by a TyC compiler.
 
@@ -173,7 +173,7 @@ The following is a list of **valid** operators along with their meaning. Note th
 
 ### Separator
 
-The following characters are the **separators**: left square bracket (`[`), right square bracket (`]`), left brace (`{`), right brace (`}`), left parenthesis (`(`), right parenthesis (`)`), semicolon (`;`), and comma (`,`).
+The following characters are the **separators**: left brace (`{`), right brace (`}`), left parenthesis (`(`), right parenthesis (`)`), semicolon (`;`), comma (`,`), and colon (`:`).
 
 ### Literal
 
@@ -187,27 +187,52 @@ Integer literals are of type **int**.
 
 #### Float literal
 
-Float literals are values that represent floating-point numbers. A float literal can be written in decimal notation (e.g., `3.14`, `0.5`, `123.456`) or in scientific notation (e.g., `1.23e4`, `5.67E-2`). A float literal may be preceded by a minus sign (`-`) to indicate a negative value.
+Float literals are values that represent floating-point numbers. A float literal consists of digits and may include a decimal point and/or an exponent part.
 
-The following are valid float numbers: `0.0` `3.14` `-2.5` `1.23e4` `5.67E-2` `1.` `.5`  
+A float literal must have at least one digit. If a decimal point is present, there must be at least one digit either before or after the decimal point (or both). The decimal point may be omitted if an exponent part is present.
+
+An exponent part consists of the letter `e` or `E`, optionally followed by a plus sign `+` or minus sign `-`, followed by one or more digits. The exponent sign is optional; if omitted, the exponent is positive. The exponent part itself is optional when a decimal point is present, but required when there is no decimal point.
+
+The following are valid float literals: `0.0` `3.14` `1.23e4` `5.67E-2` `1.` `.5` `1e4` `2E-3`  
 Float literals are of type **float**.
 
 #### String literals
 
-**String literals** consist of zero or more characters enclosed by double quotes (`"`). Use escape sequences (listed below) to represent special characters within a string.  
+**String literals** consist of zero or more characters enclosed by double quotes (`"`). A string literal can contain any character from the extended ASCII character set (code points 0-255), with the following restrictions:
 
-It is a compile-time error for a new line or EOF character to appear inside a string literal.  
-All the supported escape sequences are as follows:
+- **Newline (`\n`) and carriage return (`\r`) characters** cannot appear directly in a string literal. They must be represented using escape sequences (`\n` and `\r` respectively).
+- **Backslash (`\`)** and **double quote (`"`)** characters must be escaped when they appear in the string content (using `\\` and `\"` respectively).
+- **All other characters**, including unprintable ASCII characters (0-31) other than `\n` and `\r`, can appear directly in string literals without requiring escape sequences. However, for readability and portability, it is recommended to use escape sequences for unprintable characters when possible.
+
+**Escape sequences** are used to represent special characters within a string. All the supported escape sequences are as follows:
 
 ```
-\b   backspace
-\f   formfeed
-\r   carriage return
-\n   newline
-\t   horizontal tab
-\"   double quote
-\\   backslash
+\b   backspace (ASCII 8)
+\f   formfeed (ASCII 12)
+\r   carriage return (ASCII 13)
+\n   newline (ASCII 10)
+\t   horizontal tab (ASCII 9)
+\"   double quote (ASCII 34)
+\\   backslash (ASCII 92)
 ```
+
+Only these escape sequences are valid. Hex escapes such as `\x01` or `\x80` are not supported and will cause an `ILLEGAL_ESCAPE` error; unprintable and extended ASCII characters may be written directly in the source when the editor allows.
+
+**String Token Processing:**
+- When a valid string literal is recognized, the lexer automatically removes (strips) the enclosing double quotes from both ends. The token value contains only the string content without the quotes.
+- For error cases (`ILLEGAL_ESCAPE` and `UNCLOSE_STRING`), the lexer removes the opening double quote, but the error message includes the problematic content.
+- For `ILLEGAL_ESCAPE` errors, the error message includes the string content from the beginning (without the opening quote) up to and including the illegal escape sequence (i.e., the backslash and the character that follows it that makes it illegal).
+
+**Error Detection Order:**
+The lexer checks for errors in the following order (first match wins):
+1. **Illegal escape sequences** are detected first. An illegal escape is any backslash followed by a character that is not one of the supported escape characters (`b`, `f`, `r`, `n`, `t`, `"`, `\`), and is not followed by a newline or carriage return.
+2. **Unclosed strings** are detected if the string literal is not closed before encountering a newline, carriage return, or end of file.
+3. If neither error occurs, a **valid string literal** is recognized.
+
+It is a compile-time error for:
+- A newline (`\n`) or carriage return (`\r`) character to appear directly (unescaped) inside a string literal.
+- An EOF character to appear inside a string literal (i.e., the string literal is not closed before end of file).
+- An illegal escape sequence to appear (any backslash followed by a character that is not one of the supported escape characters: `b`, `f`, `r`, `n`, `t`, `"`, `\`).
 
 The following are valid examples of string literals:
 ```tyc
@@ -267,18 +292,19 @@ Where:
 - `<identifier>` is the struct name
 - Each `<type>` must be an explicit type (`int`, `float`, `string`, or another struct type)
 - Each `<member>` is a member name (identifier)
-- **Note:** Struct members cannot use `auto` for type inference - the type must be explicitly declared
-- **Note:** Nested structures (structs within structs) are not supported
+- A struct can have zero or more members.
 
 **Important Rules:**
-- Struct members cannot use `auto` - only explicit types are allowed
-- Struct definitions cannot be nested (no struct declaration inside another struct declaration)
-- However, struct members can be of other struct types (using previously declared struct types)
+- Struct members must have explicit types - they cannot use `auto` for type inference
+- Nested struct definitions are not supported: Struct declarations cannot be nested (you cannot declare a struct inside another struct declaration)
+- Struct members can be struct types: However, struct members can be of other struct types (using previously declared struct types)
 - Struct names must be unique in the program
 - Struct members can be of primitive types (`int`, `float`, `string`) or other struct types (that are declared before use)
 
 For example:
 ```tyc
+struct Empty {};  // Valid: empty struct with no members
+
 struct Point {
     int x;
     int y;
@@ -312,7 +338,9 @@ Where:
   - The first expression initializes the first member
   - The second expression initializes the second member
   - And so on...
-- Each expression in `<member_list>` can be a literal, a variable, a function call, or any other expression that evaluates to the correct type
+- Each expression in `<member_list>` can be a literal, a variable, a function call, a struct literal (for struct members that are struct types), or any other expression that evaluates to the correct type
+- **Initialization of struct members that are struct types:** If a struct member is of another struct type, it can be initialized using a struct literal (e.g., `Point3D p = {{1, 2}, 3};`) or a variable of that struct type (e.g., `Point2D p2 = {1, 2}; Point3D p3 = {p2, 3};`)
+- **Struct literals in function calls:** Struct literals can be used as function arguments (e.g., `f({4, 5})`), where the struct literal's type is determined by the function parameter type
 - If a struct variable is declared without initialization, all its members have undefined values until assigned
 
 For example:
@@ -338,6 +366,7 @@ Point p = {10, 20};
 p.x = 30;           // assign to member x
 auto x_coord = p.x; // read member x
 printInt(p.x);      // use member x in expression
+p.x++;              // increment member x (parsed as (p.x)++)
 ```
 
 #### Struct Operations
@@ -489,13 +518,21 @@ A **function call** is an expression that invokes a function. It has the form:
 
 where `<argument_list>` is a comma-separated list of expressions (or empty). The type of a function call expression is the return type of the function being called.
 
-### Primary Expression
+### Assignment Expression
 
-Primary expressions include:
-- **Identifiers**: `x`, `counter`, `myVar`
-- **Literals**: `123`, `3.14`, `"hello"`
-- **Parenthesized expressions**: `(x + y)`
-- **Member access**: `structVar.memberName`
+An **assignment expression** assigns a value to a variable and can be used as an expression. It has the form:
+
+```tyc
+<identifier> = <expression>
+```
+
+or
+
+```tyc
+<member_access> = <expression>
+```
+
+Assignment expressions are right-associative, allowing chained assignments such as `x = y = z = 10;`, which is parsed as `x = (y = (z = 10));`. Assignment expressions can be used in expression contexts, for example: `int y = (x = 5) + 7;`.
 
 ### Operator Precedence and Associativity
 
@@ -503,10 +540,10 @@ The order of precedence for operators is listed from highest to lowest:
 
 | **Operator** | **Associativity** |
 |--------------|-------------------|
+| `.` (member access) | left |
 | `++`, `--` (postfix) | left |
 | `++`, `--` (prefix) | right |
 | `!`, `-` (unary), `+` (unary) | right |
-| `.` (member access) | left |
 | `*`, `/`, `%` | left |
 | `+`, `-` (binary) | left |
 | `<`, `<=`, `>`, `>=` | left |
@@ -525,7 +562,7 @@ Every operand of an operator must be evaluated before any part of the operation 
 
 ## Statements
 
-A statement, which does not return anything (except return statement), indicates the action a program performs. There are many kinds of statements, as described as follows.
+A statement, which does not return anything (except return statement), indicates the action a program performs. There are many kinds of statements, as described as follows. Note that a semicolon (`;`) by itself does not constitute a valid statement; it must be part of a complete statement such as an expression statement, variable declaration, or other statement types.
 
 ### Variable Declaration Statement
 
@@ -588,21 +625,6 @@ For example:
 }
 ```
 
-### Assignment Statement
-
-An **assignment statement** assigns a value to a variable. An assignment takes the following form:  
-```tyc
-<identifier> = <expression>;
-```
-
-The type of the value returned by the `<expression>` must match the type of the variable.  
-
-The following code fragment contains examples of assignment:
-```tyc
-x = 5;
-x = x + 1;
-```
-
 ### If Statement
 
 The **if statement** conditionally executes one of two statements based on the value of an expression. The form of an if statement is:  
@@ -616,7 +638,9 @@ or
 if (<expression>) <statement> else <statement>
 ```
 
-where `<expression>` evaluates to an **int** value (0 is false, non-zero is true). If the expression results in non-zero then the first `<statement>` is executed. If `<expression>` evaluates to 0 and an else clause is specified then the `<statement>` following `else` is executed. If no else clause exists and expression is 0 then the if statement is passed over.  
+where `<expression>` evaluates to an **int** value (0 is false, non-zero is true). If the expression results in non-zero then the first `<statement>` is executed. If `<expression>` evaluates to 0 and an else clause is specified then the `<statement>` following `else` is executed. If no else clause exists and expression is 0 then the if statement is passed over.
+
+When nested if statements are used, an `else` clause is always associated with the nearest (innermost) `if` statement that does not already have an `else` clause. For example, in `if (x) if (y) a; else b;`, the `else` is associated with `if (y)`, not `if (x)`.
 
 The following is an example of an if statement:
 ```tyc
@@ -669,9 +693,9 @@ for (auto i = 0; i < 10; ++i) {
 The **switch statement** allows selection among multiple statements based on the value of an expression. Switch statements take the following form:  
 ```tyc
 switch (<expression>) {
-    case <constant_expression>:
+    case <case_expression>:
         <statement_list>
-    case <constant_expression>:
+    case <case_expression>:
         <statement_list>
     ...
     default:
@@ -681,10 +705,16 @@ switch (<expression>) {
 
 Where:
 - `<expression>` must evaluate to an **int** value
-- `<constant_expression>` is an integer literal or constant expression that evaluates to an integer value
+- `<case_expression>` is an expression that evaluates to an **int** value. The case expression can be:
+  - An integer literal: `case 1:`, `case 42:`
+  - An integer literal with unary operators: `case +1:`, `case -5:`
+  - A parenthesized expression: `case (1):`, `case (2+3):`
+  - A constant expression (expressions involving only integer literals and operators): `case 1+2:`, `case (3*4):`
+  - Any other expression that evaluates to an int value at compile time
 - Each `case` label must be followed by a colon (`:`)
-- The `default` clause is optional and can appear anywhere within the switch statement
-- `<statement_list>` can be empty or contain one or more statements
+- The `default` clause is **optional** and can appear anywhere within the switch statement. **At most one `default` clause is allowed** - if multiple `default` clauses are present, it is a compile-time error.
+- The switch body can be empty (no case statements and no default clause): `switch (x) { }`
+- `<statement_list>` within each case or default can be empty or contain one or more statements
 - Like C, **TyC switch statements have fall-through behavior** - execution continues to the next case unless a `break` statement is used
 
 **Important:** In TyC, switch statements follow C-style fall-through behavior. Execution will fall through to subsequent cases unless explicitly terminated with a `break` statement. You can use multiple case labels for the same code block to handle multiple values.
@@ -703,9 +733,26 @@ switch (day) {
     default:
         printInt(0);
 }
-```
 
-In the example above, both case 2 and case 3 will execute the same code (print 2) because case 2 falls through to case 3.
+// Empty switch body is valid
+switch (x) { }
+
+// Case with constant expressions
+switch (x) {
+    case 1+2:        // Valid: constant expression
+        printInt(3);
+        break;
+    case (4):        // Valid: parenthesized expression
+        printInt(4);
+        break;
+    case +5:         // Valid: unary plus
+        printInt(5);
+        break;
+    case -6:         // Valid: unary minus
+        printInt(6);
+        break;
+}
+```
 
 ### Break Statement
 
@@ -732,12 +779,17 @@ The type of the expression must match the return type of the function.
 
 ### Expression Statement
 
-An **expression statement** is an expression followed by a semicolon. Expression statements are used for their side effects (such as function calls).
+An **expression statement** is an expression followed by a semicolon. Expression statements are used for their side effects (such as function calls, assignments, or increment/decrement operations).
+
+An assignment expression can be used as an expression statement. When used as a statement, the assignment performs the side effect of updating the variable's value. The type of the value returned by the expression must match the type of the variable being assigned.
 
 For example:
 ```tyc
-printInt(x);
-x + y;  // valid but does nothing useful
+printInt(x);      // function call expression statement
+x = 5;            // assignment expression statement
+x = x + 1;        // assignment expression statement
+x++;              // increment expression statement
+x + y;            // valid but does nothing useful
 ```
 
 ---
@@ -792,9 +844,10 @@ auto x;
 x = readInt();         // x: int (inferred from function return type - first usage)
 
 auto y;
-// printInt(y);        // Error: cannot infer type from printInt() call alone
-y = 10;                // y: int (inferred from first usage - assignment)
-printInt(y);           // Now y is int, so printInt can be used
+printInt(y);           // y: int (inferred from function parameter type - first usage)
+auto z;
+z = readInt();         // z: int (inferred from function return type - first usage)
+printInt(z);           // Now z is int, so printInt can be used
 ```
 
 **2.3 Variable Declaration with Explicit Type and Initialization:**
@@ -908,8 +961,9 @@ The type of an expression is inferred from its components:
 
 - Function return types can be explicitly declared or omitted (inferred)
 - When the return type is omitted, it is inferred from the return statements in the function:
-  - If all return statements return a value of type `T`, the return type is inferred as `T`
+  - The return type is inferred from the **first return statement** that returns a value
   - If there are no return statements or only `return;` statements, the return type is inferred as `void`
+  - All subsequent return statements must return a value of the inferred return type - if a return statement returns a value of a different type, it is a compile-time error (TypeMismatchInStatement)
 - All `return` statements in a function must return a value of the inferred/declared return type (or no value for `void`)
 
 ### Strict Operator Typing
@@ -1184,8 +1238,8 @@ A TyC program consists of a sequence of struct declarations and function declara
 - Each struct declaration defines a new composite type with named members
 - Struct members must have explicit types (`int`, `float`, `string`, or another struct type)
 - Struct members cannot use `auto` for type inference
-- Struct definitions cannot be nested (no struct declaration inside another struct declaration)
-- However, struct members can be of other struct types (using previously declared struct types)
+- **Nested struct definitions are not supported:** Struct declarations cannot be nested (you cannot declare a struct inside another struct declaration)
+- **Struct members can be struct types:** However, struct members can be of other struct types (using previously declared struct types)
 
 **Function Declarations:**
 - Each function has:
@@ -1199,7 +1253,7 @@ The main structural elements include:
 
 - **Structs**: Composite types with named members of explicit types
 - **Functions**: Declarations with return types, parameters, and bodies
-- **Statements**: Variable declarations, assignments, control flow (if, while, for, switch-case), break, continue, return, expression statements, and blocks
+- **Statements**: Variable declarations, control flow (if, while, for, switch-case), break, continue, return, expression statements (including assignments), and blocks
 - **Expressions**: Primary expressions (identifiers, literals, parenthesized, member access), unary operations, binary operations following operator precedence, function calls, and postfix operations (increment/decrement)
 - **Types**: `int`, `float`, `string`, `void`, struct types, and type inference using `auto`
 - **Variable Declaration**: Can use `auto` for type inference or explicit types (`int`, `float`, `string`, or struct type names)

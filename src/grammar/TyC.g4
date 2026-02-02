@@ -179,31 +179,54 @@ var_auto_init: AUTO ID ASSIGN expr SM;
 // =====================
 // EXPRESSIONS
 // =====================
+
 expr: exp0;
 
+// assignment (right)
 exp0: exp1 ASSIGN exp0 | exp1;
+
+// logical OR (left)
 exp1: exp1 LOR exp2 | exp2;
+
+// logical AND (left)
 exp2: exp2 LAND exp3 | exp3;
+
+// equality (left)
 exp3: exp3 (EQ | NEQ) exp4 | exp4;
+
+// relational (left)
 exp4: exp4 (LT | LE | GT | GE) exp5 | exp5;
+
+// additive (left)
 exp5: exp5 (ADD | SUB) exp6 | exp6;
+
+// multiplicative (left)
 exp6: exp6 (MUL | DIV | MOD) exp7 | exp7;
-exp7: exp7 DOT ID | exp8;
-exp8: (LNOT | ADD | SUB) exp8 | exp9;
-exp9: (INC | DEC) exp9 | exp10;
-exp10: exp10 (INC | DEC)? | operand;
 
-lvalue: ID 
-    | lvalue DOT ID;
+// unary ! + - (right)
+exp7: (LNOT | ADD | SUB) exp7 | exp8;
 
-operand: ID
-       | ID LP expr_lst? RP //function call
-       | literal
-       | LP expr RP;
+// prefix ++ -- (right)
+exp8: (INC | DEC) exp8 | exp9;
+
+
+// postfix ++ --
+exp9: exp9 INC
+    | exp9 DEC
+    | exp10;
+
+// member access + function call (higher precedence)
+exp10: exp10 DOT ID
+    | exp10 LP expr_lst? RP
+    | exp11;
+
+// primary
+exp11: ID | literal | LP expr RP;
 
 literal: INTLIT | FLOATLIT | STRINGLIT;
-
 expr_lst: expr (CM expr)*;
+
+
 
 
 // =====================
@@ -214,20 +237,15 @@ stmt: simple_stmt SM
     | if_stmt
     | while_stmt
     | for_stmt
-    | switch_stmt
-    ;
+    | switch_stmt;
 
-simple_stmt: assign
-           | break_stmt
+simple_stmt: break_stmt
            | continue_stmt
            | return_stmt
-           | expr_stmt
-           ;
+           | expr_stmt;
 
 block: LB stmt_lst RB;
 stmt_lst: stmt*;
-
-assign: ID ASSIGN expr;
 
 if_stmt: IF LP expr RP stmt 
         | IF LP expr RP stmt ELSE stmt;

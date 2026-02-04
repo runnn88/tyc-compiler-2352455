@@ -102,7 +102,7 @@ UNCLOSE_STRING: '"' STR_CHAR* ('\r' | '\n' | EOF);
 
 
 
-//Primitive types
+//Types
 INT: 'int';
 FLOAT: 'float';
 STRING: 'string';
@@ -182,8 +182,12 @@ var_auto_init: AUTO ID ASSIGN expr SM;
 
 expr: exp0;
 
+//assignment lhs
+assign_lhs: ID
+            | exp10 DOT ID;
+
 // assignment (right)
-exp0: exp1 ASSIGN exp0 | exp1;
+exp0: assign_lhs ASSIGN exp0 | exp1;
 
 // logical OR (left)
 exp1: exp1 LOR exp2 | exp2;
@@ -264,9 +268,11 @@ incdec_expr: INC ID
             | ID INC
             | ID DEC;
 
-switch_stmt: SWITCH LP expr RP LB case_lst default_case? RB;
+switch_stmt: SWITCH LP expr RP LB switch_body RB;
+switch_body: case_lst default_case case_lst
+            | case_lst;
 case_lst: case_stmt*;
-case_stmt: CASE INTLIT COLON stmt_lst;
+case_stmt: CASE expr COLON stmt_lst;
 default_case: DEFAULT COLON stmt_lst;
 
 break_stmt: BREAK;
@@ -277,7 +283,7 @@ expr_stmt: expr;
 program: (struct_decl | func_decl)+ EOF;
 
 LINE_COMMENT  : '//' ~[\r\n]* -> skip ;
-BLOCK_COMMENT : '/*' .*? '*/' -> skip ;
+BLOCK_COMMENT : '/*' .* '*/' -> skip ;
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs
 
 ERROR_CHAR: .;

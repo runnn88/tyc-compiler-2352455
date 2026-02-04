@@ -354,11 +354,13 @@ Person person2 = {"John", 25, 1.75};  // initialized: name="John", age=25, heigh
 
 #### Struct Member Access
 
-Struct members are accessed using the dot (`.`) operator:
+Struct members are accessed using the dot (`.`) operator. The left-hand side may be any expression that evaluates to a struct type (e.g., a variable, a function call that returns a struct, or a parenthesized expression):
 
 ```tyc
-<struct_variable>.<member_name>
+<expr>.<member_name>
 ```
+
+where `<expr>` must have a struct type and `<member_name>` must be a member of that struct.
 
 For example:
 ```tyc
@@ -1259,10 +1261,10 @@ The main structural elements include:
 - **Variable Declaration**: Can use `auto` for type inference or explicit types (`int`, `float`, `string`, or struct type names)
 - **Literals**: Integer, floating-point, and string literals
 
-**Operator Precedence** (as specified in the Expressions section):
-1. Postfix operators (`++`, `--`)
-2. Prefix/unary operators (`!`, `-`, `+`, `++`, `--`)
-3. Member access (`.`)
+**Operator Precedence** (as specified in the Expressions section, highest to lowest):
+1. Member access (`.`)
+2. Postfix operators (`++`, `--`)
+3. Prefix/unary operators (`!`, `-`, `+`, `++`, `--`)
 4. Multiplicative (`*`, `/`, `%`)
 5. Additive (`+`, `-`)
 6. Relational (`<`, `<=`, `>`, `>=`)

@@ -166,14 +166,16 @@ var_structdecl_init: ID ID ASSIGN LB expr_lst RB SM;
 // =====================
 // VARIABLE DECLARE + INIT
 // =====================
-vardecl: var_explicit_decl | var_auto_decl;
-var_explicit_decl: var_explicit_noinit | var_explicit_init;
-var_explicit_noinit: typ ID SM;
-var_explicit_init: typ ID ASSIGN expr SM;
 
-var_auto_decl: var_auto_noinit | var_auto_init;
-var_auto_noinit: AUTO ID SM;
-var_auto_init: AUTO ID ASSIGN expr SM;
+vardecl: vardecl_core SM;
+
+vardecl_core: var_explicit_core
+                | var_auto_core;
+
+var_explicit_core: typ ID (ASSIGN expr)?;
+
+var_auto_core: AUTO ID (ASSIGN expr)?;
+
 
 
 // =====================
@@ -257,8 +259,12 @@ if_stmt: IF LP expr RP stmt
 while_stmt: WHILE LP expr RP stmt;
 
 for_stmt: FOR LP for_init? SM for_cond? SM for_update? RP stmt;
-for_init: vardecl 
+for_init: vardecl_core 
         | assign;
+
+// assignment 
+assign: assign_lhs ASSIGN exp0
+
 for_cond: expr;
 for_update: assign 
             | incdec_expr;

@@ -1,3 +1,8 @@
+"""
+Lexer test cases for TyC compiler
+TODO: Implement 100 test cases for lexer
+"""
+
 import pytest
 from tests.utils import Tokenizer
 
@@ -61,3 +66,35 @@ def test_complex_expression():
     """10. Complex: variable declaration"""
     tokenizer = Tokenizer("auto x = 5 + 3 * 2;")
     assert tokenizer.get_tokens_as_string() == "auto,x,=,5,+,3,*,2,;,<EOF>"
+    
+# ========== Manual Added Lexer Tests ==========
+
+def test_expr_precedence():
+    tokenizer = Tokenizer("auto x = 5 + 3 * 2;")
+    assert tokenizer.get_tokens_as_string() == "auto,x,=,5,+,3,*,2,;,<EOF>"
+
+
+def test_function_declaration_tokens():
+    tokenizer = Tokenizer("int add(int x, int y) { return x + y; }")
+    assert tokenizer.get_tokens_as_string() == (
+        "int,add,(,int,x,,,int,y,),{,return,x,+,y,;,},<EOF>"
+    )
+
+
+def test_multiple_var_decls_with_string():
+    tokenizer = Tokenizer('int x = 10; float y = 3.14; string s = "hello";')
+    assert tokenizer.get_tokens_as_string() == (
+        "int,x,=,10,;,float,y,=,3.14,;,string,s,=,hello,;,<EOF>"
+    )
+
+
+def test_struct_declaration_tokens():
+    tokenizer = Tokenizer("struct Point { int x; int y; };")
+    assert tokenizer.get_tokens_as_string() == (
+        "struct,Point,{,int,x,;,int,y,;,},;,<EOF>"
+    )
+
+
+def test_error_token_at():
+    tokenizer = Tokenizer("@")
+    assert tokenizer.get_tokens_as_string() == "Error Token @"

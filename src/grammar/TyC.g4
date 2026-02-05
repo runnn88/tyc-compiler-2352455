@@ -93,7 +93,11 @@ fragment STR_CHAR: ESC_SEQ
                 | ~["\\\r\n];
 
 //Valid string literal
-STRINGLIT: '"' STR_CHAR* '"';
+STRINGLIT: '"' STR_CHAR* '"'
+        {
+            self.text = self.text[1:-1]
+        }
+        ;
 
 ILLEGAL_ESCAPE: '"' STR_CHAR* '\\' ~[bfrnt"\\];
 
@@ -133,7 +137,7 @@ ID: (ALPHA|'_')(ALPHA|DIGIT|'_')*;
 // FUNCTION
 // =====================
 func_decl: func_decl_typed | func_decl_infer;
-func_decl_typed: typ ID LP param_list? RP block;
+func_decl_typed: func_typ ID LP param_list? RP block;
 func_decl_infer: ID LP param_list? RP block;
 param_list: param (CM param)*;
 param: typ ID;
@@ -243,7 +247,8 @@ stmt: simple_stmt SM
     | if_stmt
     | while_stmt
     | for_stmt
-    | switch_stmt;
+    | switch_stmt
+    | vardecl;
 
 simple_stmt: break_stmt
            | continue_stmt
@@ -263,7 +268,7 @@ for_init: vardecl_core
         | assign;
 
 // assignment 
-assign: assign_lhs ASSIGN exp0
+assign: assign_lhs ASSIGN exp0;
 
 for_cond: expr;
 for_update: assign 
@@ -286,10 +291,10 @@ continue_stmt: CONTINUE;
 return_stmt: RETURN expr?;
 expr_stmt: expr;
 
-program: (struct_decl | func_decl)+ EOF;
+program: (struct_decl | func_decl)* EOF;
 
 LINE_COMMENT  : '//' ~[\r\n]* -> skip ;
-BLOCK_COMMENT : '/*' .* '*/' -> skip ;
+BLOCK_COMMENT : '/*' .*? '*/' -> skip ;
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs
 
 ERROR_CHAR: .;

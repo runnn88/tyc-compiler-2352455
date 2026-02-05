@@ -1,3 +1,8 @@
+"""
+Parser test cases for TyC compiler
+TODO: Implement 100 test cases for parser
+"""
+
 import pytest
 from tests.utils import Parser
 
@@ -59,3 +64,36 @@ def test_assignment_simple():
     """10. Assignment statement"""
     source = "void main() { int x; x = 5; }"
     assert Parser(source).parse() == "success"
+    
+# ========== Manual Added Parser Tests ==========
+
+def test_switch_with_literal():
+    source = "void main() { switch (1) { case 1: printInt(1); break; } }"
+    assert Parser(source).parse() == "success"
+
+
+def test_switch_multiple_cases():
+    source = (
+        "void main() { "
+        "switch (x) { "
+        "case 1: printInt(1); break; "
+        "case 2: printInt(2); break; "
+        "} }"
+    )
+    assert Parser(source).parse() == "success"
+
+
+def test_auto_decl_then_assign():
+    source = "void main() { auto x; x = 5; }"
+    assert Parser(source).parse() == "success"
+
+
+def test_struct_only_program():
+    source = "struct Point { int x; int y; };"
+    assert Parser(source).parse() == "success"
+
+
+def test_invalid_var_init_missing_expr():
+    source = "void main() { int x = ; }"
+    result = Parser(source).parse()
+    assert result != "success"

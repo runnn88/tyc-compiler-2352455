@@ -24,7 +24,16 @@ options{
 	language=Python3;
 }
 
+
+LINE_COMMENT  : '//' ~[\r\n]* -> skip ;
+BLOCK_COMMENT : '/*' .*? '*/' -> skip ;
+
 //Operators
+// Increment / decrement
+INC: '++';
+DEC: '--';
+
+// Arithmetic
 ADD: '+';
 SUB: '-';
 MUL: '*';
@@ -41,9 +50,6 @@ GT   : '>';
 LAND : '&&';
 LOR  : '||';
 LNOT : '!';
-
-INC: '++';
-DEC: '--';
 
 ASSIGN: '=';
 DOT: '.';
@@ -74,7 +80,7 @@ INTLIT: ('-'?)(DIGIT+);
 // =====================
 // FLOAT LITERALS
 // =====================
-fragment SCIENTIFIC: [eE] '-'? DIGIT+;
+fragment SCIENTIFIC: [eE] [+-]? DIGIT+;
 FLOATLIT: '-'?
             ( ( '.'DIGIT+ SCIENTIFIC?) 
             | ( DIGIT+'.'DIGIT*SCIENTIFIC? ) 
@@ -95,13 +101,23 @@ fragment STR_CHAR: ESC_SEQ
 //Valid string literal
 STRINGLIT: '"' STR_CHAR* '"'
         {
+            # strip opening and closing quotes
             self.text = self.text[1:-1]
-        }
-        ;
+        };
 
-ILLEGAL_ESCAPE: '"' STR_CHAR* '\\' ~[bfrnt"\\];
+// Illegal escape (must be detected FIRST)
+ILLEGAL_ESCAPE: '"' STR_CHAR* '\\' ~[bfrnt"\\\r\n]
+            {
+                self.text = self.text[1:]
+            };
 
-UNCLOSE_STRING: '"' STR_CHAR* ('\r' | '\n' | EOF);
+// Unclosed string (newline, CR, or EOF before closing quote)
+UNCLOSE_STRING: '"' STR_CHAR* ('\r' | '\n' | EOF)
+            {
+                self.text = self.text[1:]
+                if self.text.endswith('\n') or self.text.endswith('\r'):
+                    self.text = self.text[:-1]
+            };
 
 
 
@@ -166,6 +182,9 @@ var_structdecl: var_structdecl_init;
 //var_structdecl_noinit: ID ID SM;
 var_structdecl_init: ID ID ASSIGN LB expr_lst RB SM;
 
+//STRUCT LITERAL
+struct_literal: LB expr_lst? RB;
+
 
 // =====================
 // VARIABLE DECLARE + INIT
@@ -188,12 +207,8 @@ var_auto_core: AUTO ID (ASSIGN expr)?;
 
 expr: exp0;
 
-//assignment lhs
-assign_lhs: ID
-            | exp10 DOT ID;
-
 // assignment (right)
-exp0: assign_lhs ASSIGN exp0 | exp1;
+exp0: exp1 ASSIGN exp0 | exp1;
 
 // logical OR (left)
 exp1: exp1 LOR exp2 | exp2;
@@ -211,29 +226,26 @@ exp4: exp4 (LT | LE | GT | GE) exp5 | exp5;
 exp5: exp5 (ADD | SUB) exp6 | exp6;
 
 // multiplicative (left)
-exp6: exp6 (MUL | DIV | MOD) exp7 | exp7;
+exp6: exp6 (MUL | DIV | MOD) prefix | prefix;
 
-// unary ! + - (right)
-exp7: (LNOT | ADD | SUB) exp7 | exp8;
+// prefix: unary ! + - (right)  prefix ++ -- (right, higher precedence)
+prefix: (LNOT | ADD | SUB | INC | DEC) prefix 
+        | postfix;
 
-// prefix ++ -- (right)
-exp8: (INC | DEC) exp8 | exp9;
-
-
-// postfix ++ --
-exp9: exp9 INC
-    | exp9 DEC
-    | exp10;
-
-// member access + function call (higher precedence)
-exp10: exp10 DOT ID
-    | exp10 LP expr_lst? RP
-    | exp11;
+// postfix: ++ -- (left)  member access + function call (left, higher precedence)
+postfix: postfix INC
+        | postfix DEC
+        | postfix DOT ID
+        | postfix LP expr_lst? RP
+        | primary;
 
 // primary
-exp11: ID | literal | LP expr RP;
+primary: ID
+        | literal
+        | LP expr RP
+        | struct_literal;
 
-literal: INTLIT | FLOATLIT | STRINGLIT;
+literal: INTLIT | FLOATLIT | STRINGLIT | STRUCTLIT;
 expr_lst: expr (CM expr)*;
 
 
@@ -268,16 +280,16 @@ for_init: vardecl_core
         | assign;
 
 // assignment 
-assign: assign_lhs ASSIGN exp0;
-
+assign: exp0;
 for_cond: expr;
 for_update: assign 
             | incdec_expr;
 
-incdec_expr: INC ID
-            | DEC ID
-            | ID INC
-            | ID DEC;
+incdec_expr: INC expr
+        | DEC expr
+        | expr INC
+        | expr DEC;
+
 
 switch_stmt: SWITCH LP expr RP LB switch_body RB;
 switch_body: case_lst default_case case_lst
@@ -293,8 +305,7 @@ expr_stmt: expr;
 
 program: (struct_decl | func_decl)* EOF;
 
-LINE_COMMENT  : '//' ~[\r\n]* -> skip ;
-BLOCK_COMMENT : '/*' .*? '*/' -> skip ;
-WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs
+
+WS : [ \t\r\n\f]+ -> skip ; // skip spaces, tabs
 
 ERROR_CHAR: .;

@@ -456,9 +456,6 @@ def test_invalid_else_without_if_complex():
     assert Parser(source).parse() != "success"
 
 
-import pytest
-from tests.utils import Parser
-
 # =========================================================
 # SECTION 8: SWITCH / CASE / DEFAULT / BREAK
 # =========================================================

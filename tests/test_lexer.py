@@ -286,7 +286,7 @@ def test_number_valid_int_basic():
 
 def test_number_valid_int_negative():
     tokenizer = Tokenizer("-1 -45 -999")
-    assert tokenizer.get_tokens_as_string() == "-1,-45,-999,<EOF>"
+    assert tokenizer.get_tokens_as_string() == "-,1,-,45,-,999,<EOF>"
 
 
 def test_number_valid_float_decimal():
@@ -301,7 +301,7 @@ def test_number_valid_float_scientific():
 
 def test_number_valid_mixed():
     tokenizer = Tokenizer("10 3.14 1e2 0.5 -3")
-    assert tokenizer.get_tokens_as_string() == "10,3.14,1e2,0.5,-3,<EOF>"
+    assert tokenizer.get_tokens_as_string() == "10,3.14,1e2,0.5,-,3,<EOF>"
 
 
 # ---------- INVALID FOR TYPE BUT VALID FOR LEXER ----------

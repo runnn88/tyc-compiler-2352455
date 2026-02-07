@@ -75,16 +75,15 @@ COLON: ':';
 // =====================
 fragment DIGIT: [0-9];
 
-INTLIT: ('-'?)(DIGIT+);
+INTLIT: (DIGIT+);
 
 // =====================
 // FLOAT LITERALS
 // =====================
 fragment SCIENTIFIC: [eE] [+-]? DIGIT+;
-FLOATLIT: '-'?
-            ( ( '.'DIGIT+ SCIENTIFIC?) 
-            | ( DIGIT+'.'DIGIT*SCIENTIFIC? ) 
-            | ( DIGIT+ SCIENTIFIC) );
+FLOATLIT: ( ( '.'DIGIT+ SCIENTIFIC?) 
+        | ( DIGIT+'.'DIGIT*SCIENTIFIC? ) 
+        | ( DIGIT+ SCIENTIFIC) );
 
 
 // =====================
@@ -179,7 +178,6 @@ struct_vardecl: typ ID SM;
 
 //INITIALIZE
 var_structdecl: var_structdecl_init;
-//var_structdecl_noinit: ID ID SM;
 var_structdecl_init: ID ID ASSIGN LB expr_lst RB SM;
 
 //STRUCT LITERAL

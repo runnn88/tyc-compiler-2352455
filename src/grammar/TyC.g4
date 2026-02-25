@@ -206,7 +206,11 @@ var_auto_core: AUTO ID (ASSIGN expr)?;
 expr: exp0;
 
 // assignment (right)
-exp0: exp1 ASSIGN exp0 | exp1;
+exp0: assign_lhs ASSIGN exp0 | exp1;
+assign_lhs: ID
+        | assign_lhs DOT ID
+        | ID LP expr_lst? RP DOT ID
+        | LP assign_lhs RP;
 
 // logical OR (left)
 exp1: exp1 LOR exp2 | exp2;
@@ -243,7 +247,7 @@ primary: ID
         | LP expr RP
         | struct_literal;
 
-literal: INTLIT | FLOATLIT | STRINGLIT | STRUCTLIT;
+literal: INTLIT | FLOATLIT | STRINGLIT;
 expr_lst: expr (CM expr)*;
 
 

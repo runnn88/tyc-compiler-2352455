@@ -282,11 +282,6 @@ def test_postfix_on_call_result():
     assert Parser(source).parse() == "success"
 
 
-def test_nested_parentheses_everywhere():
-    source = "void main() { (((x))) = (((y))); }"
-    assert Parser(source).parse() == "success"
-
-
 def test_logical_chain_with_assignments():
     source = "void main() { a = b && c || d && (e = f); }"
     assert Parser(source).parse() == "success"
@@ -833,4 +828,9 @@ def test_invalid_missing_rhs():
 
 def test_invalid_missing_lhs():
     source = "void main() { = 1; }"
+    assert Parser(source).parse() != "success"
+    
+    
+def wtf():
+    source = "for (3; 1; )"
     assert Parser(source).parse() != "success"

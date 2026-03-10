@@ -56,9 +56,6 @@ DOT: '.';
 
 //Separators
 
-LSB: '[';
-RSB: ']';
-
 LB: '{';
 RB: '}';
 
@@ -208,9 +205,12 @@ expr: exp0;
 // assignment (right)
 exp0: assign_lhs ASSIGN exp0 | exp1;
 assign_lhs: ID
-        | assign_lhs DOT ID
-        | ID LP expr_lst? RP DOT ID
-        | LP assign_lhs RP;
+        | struct_val DOT ID;
+
+struct_val: ID
+        | struct_val DOT ID
+        | struct_val LP expr_lst? RP
+        | LP struct_val RP;
 
 // logical OR (left)
 exp1: exp1 LOR exp2 | exp2;
@@ -278,13 +278,12 @@ if_stmt: IF LP expr RP stmt
 while_stmt: WHILE LP expr RP stmt;
 
 for_stmt: FOR LP for_init? SM for_cond? SM for_update? RP stmt;
-for_init: vardecl_core 
-        | assign;
 
-// assignment 
-assign: exp0;
+for_init: vardecl_core
+        | assign_lhs ASSIGN expr;
+
 for_cond: expr;
-for_update: assign 
+for_update: assign_lhs ASSIGN expr
             | incdec_expr;
 
 incdec_expr: INC expr
@@ -294,8 +293,9 @@ incdec_expr: INC expr
 
 
 switch_stmt: SWITCH LP expr RP LB switch_body RB;
-switch_body: case_lst default_case case_lst
-            | case_lst;
+switch_body: case_stmt*                           
+        | case_stmt* default_case case_stmt*;
+
 case_lst: case_stmt*;
 case_stmt: CASE expr COLON stmt_lst;
 default_case: DEFAULT COLON stmt_lst;

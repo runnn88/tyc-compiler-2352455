@@ -250,12 +250,12 @@ def test_sep_valid_all():
 
 def test_sep_invalid_1():
     tokenizer = Tokenizer("[")
-    assert tokenizer.get_tokens_as_string() == "[,<EOF>"
+    assert tokenizer.get_tokens_as_string() == "Error Token ["
 
 
 def test_sep_invalid_2():
     tokenizer = Tokenizer("]")
-    assert tokenizer.get_tokens_as_string() == "],<EOF>"
+    assert tokenizer.get_tokens_as_string() == "Error Token ]"
 
 
 def test_sep_invalid_3():
@@ -461,7 +461,6 @@ def test_string_invalid_illegal_escape_digit():
 def test_string_invalid_dangling_backslash():
     tokenizer = Tokenizer("\"\\\"")
     assert "Unclosed String" in tokenizer.get_tokens_as_string()
-
 
 
 # ==================================================

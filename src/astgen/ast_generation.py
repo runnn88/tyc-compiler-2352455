@@ -41,34 +41,6 @@ class ASTGeneration(TyCVisitor):
     def visitStruct_vardecl(self, ctx):
         return MemberDecl(self.visit(ctx.typ()), ctx.ID().getText())
 
-    def visitStruct_val(self, ctx):
-        # ID
-        if ctx.getChildCount() == 1:
-            return Identifier(ctx.getChild(0).getText())
-
-        # (struct_val)
-        if ctx.getChildCount() == 3 and ctx.getChild(0).getText() == "(":
-            return self.visit(ctx.struct_val())
-
-        # struct_val . ID
-        if ctx.DOT():
-            return MemberAccess(
-                self.visit(ctx.struct_val()),
-                ctx.getChild(2).getText()
-            )
-
-        # struct_val (expr_lst?)
-        if ctx.LP() and ctx.struct_val():
-            func = self.visit(ctx.struct_val())
-            args = self.visit(ctx.expr_lst()) if ctx.expr_lst() else []
-
-            if isinstance(func, Identifier):
-                return FuncCall(func.name, args)
-
-            raise ValueError("Function call target must be an identifier")
-
-        raise ValueError("Invalid struct value expression")
-
     # ==========================================================
     # FUNCTION DECLARATION
     # ==========================================================
@@ -286,17 +258,33 @@ class ASTGeneration(TyCVisitor):
     # EXPRESSIONS
     # ==========================================================
 
+    def _apply_call(self, func, args):
+        if isinstance(func, Identifier):
+            return FuncCall(func.name, args)
+        raise ValueError("Function call target must be an identifier")
+
+    def _apply_postfix_suffixes(self, expr, suffixes):
+        for suffix in suffixes:
+            token = suffix.getChild(0).getText()
+            if token == ".":
+                expr = MemberAccess(expr, suffix.ID().getText())
+            elif token == "(":
+                args = self.visit(suffix.expr_lst()) if suffix.expr_lst() else []
+                expr = self._apply_call(expr, args)
+            else:
+                expr = PostfixOp(token, expr)
+        return expr
+
     # Assignment (right associative)
     def visitAssign_lhs(self, ctx):
-        # simple ID
-        if ctx.getChildCount() == 1:
-            return Identifier(ctx.getChild(0).getText())
+        if ctx.ID():
+            return Identifier(ctx.ID().getText())
+        return self.visit(ctx.member_lhs())
 
-        # struct_val DOT ID
-        return MemberAccess(
-            self.visit(ctx.struct_val()),
-            ctx.getChild(2).getText()
-        )
+    def visitMember_lhs(self, ctx):
+        expr = self.visit(ctx.primary())
+        expr = self._apply_postfix_suffixes(expr, ctx.member_suffix())
+        return MemberAccess(expr, ctx.ID().getText())
         
     def visitExp0(self, ctx):
         if ctx.ASSIGN():
@@ -375,29 +363,8 @@ class ASTGeneration(TyCVisitor):
     # ----- Postfix -----
 
     def visitPostfix(self, ctx):
-        # postfix ++ / --
-        if ctx.getChildCount() == 2:
-            return PostfixOp(
-                ctx.getChild(1).getText(),
-                self.visit(ctx.postfix())
-            )
-
-        # member access
-        if ctx.DOT():
-            return MemberAccess(
-                self.visit(ctx.postfix()),
-                ctx.getChild(2).getText()
-            )
-
-        # function call
-        if ctx.LP():
-            func = self.visit(ctx.postfix())
-            args = self.visit(ctx.expr_lst()) if ctx.expr_lst() else []
-            if isinstance(func, Identifier):
-                return FuncCall(func.name, args)
-            raise ValueError("Function call target must be an identifier")
-
-        return self.visit(ctx.primary())
+        expr = self.visit(ctx.primary())
+        return self._apply_postfix_suffixes(expr, ctx.postfix_suffix())
 
     # ----- Primary -----
 

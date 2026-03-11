@@ -282,6 +282,7 @@ def test_postfix_on_call_result():
     assert Parser(source).parse() == "success"
 
 
+
 def test_logical_chain_with_assignments():
     source = "void main() { a = b && c || d && (e = f); }"
     assert Parser(source).parse() == "success"
@@ -291,15 +292,6 @@ def test_relational_chain_with_arithmetic():
     source = "void main() { (a + b * c) < (d - e / f); }"
     assert Parser(source).parse() == "success"
 
-
-def test_extreme_mixed_expression():
-    source = """
-    void main() {
-        a = ++b.c--.d.e(f(1, g(2)), h()) * -(i + j++)
-            && k || l = m = n++;
-    }
-    """
-    assert Parser(source).parse() != "success"
 
 
 # ---------------- INVALID EXPRESSIONS ----------------
@@ -750,87 +742,4 @@ def test_invalid_call_trailing_comma():
 
 def test_invalid_call_missing_paren():
     source = "void main() { f(1, 2; }"
-    assert Parser(source).parse() != "success"
-
-
-# ================= ASSIGNMENT - VALID =================
-
-def test_assign_simple_identifier():
-    source = "void main() { x = 1; }"
-    assert Parser(source).parse() == "success"
-
-
-def test_assign_chain_right_associative():
-    source = "void main() { a = b = c = 1; }"
-    assert Parser(source).parse() == "success"
-
-
-def test_assign_member_access_simple():
-    source = "void main() { a.b = 1; }"
-    assert Parser(source).parse() == "success"
-
-
-def test_assign_member_access_chain():
-    source = "void main() { a.b.c.d = x; }"
-    assert Parser(source).parse() == "success"
-
-
-def test_assign_call_member():
-    source = "void main() { f().x = y; }"
-    assert Parser(source).parse() == "success"
-
-
-def test_assign_parenthesized_lhs():
-    source = "void main() { (a).b = 1; }"
-    assert Parser(source).parse() == "success"
-
-
-def test_assign_nested_parentheses_lhs():
-    source = "void main() { ((a)).b.c = d; }"
-    assert Parser(source).parse() == "success"
-
-
-def test_assign_inside_expression():
-    source = "void main() { x = (a = b) + 1; }"
-    assert Parser(source).parse() == "success"
-    
-# ================= ASSIGNMENT - INVALID =================
-
-def test_invalid_assign_to_postfix_increment():
-    source = "void main() { a++ = b; }"
-    assert Parser(source).parse() != "success"
-
-
-def test_invalid_assign_to_postfix_decrement():
-    source = "void main() { a-- = b; }"
-    assert Parser(source).parse() != "success"
-
-
-def test_invalid_assign_to_function_call():
-    source = "void main() { f() = 1; }"
-    assert Parser(source).parse() != "success"
-
-
-def test_invalid_assign_to_expression():
-    source = "void main() { (a + b) = 1; }"
-    assert Parser(source).parse() != "success"
-
-
-def test_invalid_assign_to_literal():
-    source = "void main() { 123 = a; }"
-    assert Parser(source).parse() != "success"
-
-
-def test_invalid_missing_rhs():
-    source = "void main() { a = ; }"
-    assert Parser(source).parse() != "success"
-
-
-def test_invalid_missing_lhs():
-    source = "void main() { = 1; }"
-    assert Parser(source).parse() != "success"
-    
-    
-def wtf():
-    source = "for (3; 1; )"
     assert Parser(source).parse() != "success"

@@ -103,17 +103,22 @@ STRINGLIT: '"' STR_CHAR* '"'
 
 // Illegal escape (must be detected FIRST)
 ILLEGAL_ESCAPE: '"' STR_CHAR* '\\' ~[bfrnt"\\\r\n]
-            {
+        {
                 self.text = self.text[1:]
-            };
+        };
 
-// Unclosed string (newline, CR, or EOF before closing quote)
-UNCLOSE_STRING: '"' STR_CHAR* ('\r' | '\n' | EOF)
-            {
-                self.text = self.text[1:]
-                if self.text.endswith('\n') or self.text.endswith('\r'):
-                    self.text = self.text[:-1]
-            };
+UNCLOSE_STRING: '"' STR_CHAR* '\\'? EOF
+    {
+        self.text = self.text[1:]
+    }
+    | '"' STR_CHAR* '\\'? '\n'
+    {
+        self.text = self.text[1:-1]
+    }
+    | '"' STR_CHAR* '\\'? '\r'
+    {
+        self.text = self.text[1:-1]
+    };
 
 
 
@@ -205,12 +210,13 @@ expr: exp0;
 // assignment (right)
 exp0: assign_lhs ASSIGN exp0 | exp1;
 assign_lhs: ID
-        | struct_val DOT ID;
+        | member_lhs;
 
-struct_val: ID
-        | struct_val DOT ID
-        | struct_val LP expr_lst? RP
-        | LP struct_val RP;
+member_lhs: primary member_suffix* DOT ID;
+member_suffix: DOT ID
+            | LP expr_lst? RP
+            | INC
+            | DEC;
 
 // logical OR (left)
 exp1: exp1 LOR exp2 | exp2;
@@ -234,12 +240,12 @@ exp6: exp6 (MUL | DIV | MOD) prefix | prefix;
 prefix: (LNOT | ADD | SUB | INC | DEC) prefix 
         | postfix;
 
-// postfix: ++ -- (left)  member access + function call (left, higher precedence)
-postfix: postfix INC
-        | postfix DEC
-        | postfix DOT ID
-        | postfix LP expr_lst? RP
-        | primary;
+// postfix expressions chain left-to-right
+postfix: primary postfix_suffix*;
+postfix_suffix: DOT ID
+              | LP expr_lst? RP
+              | INC
+              | DEC;
 
 // primary
 primary: ID

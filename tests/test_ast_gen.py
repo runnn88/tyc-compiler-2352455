@@ -20,91 +20,91 @@ def test_empty_program():
 
 def test_void_main_function():
     source = "void main(){}"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_int_main_returns_zero():
     source = "int main(){ return 0; }"
-    expected = "Program([FuncDecl(IntType(), main, [], BlockStmt([ReturnStmt(return IntLiteral(0))]))])"
+    expected = "Program([FuncDecl(IntType(), main, [], [ReturnStmt(return IntLiteral(0))])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_auto_function_without_declared_return_type():
     source = "f(){}"
-    expected = "Program([FuncDecl(auto, f, [], BlockStmt([]))])"
+    expected = "Program([FuncDecl(auto, f, [], [])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_auto_function_with_typed_parameters():
     source = "sum(int a, int b){ return a+b; }"
-    expected = "Program([FuncDecl(auto, sum, [Param(IntType(), a), Param(IntType(), b)], BlockStmt([ReturnStmt(return BinaryOp(Identifier(a), +, Identifier(b)))]))])"
+    expected = "Program([FuncDecl(auto, sum, [Param(IntType(), a), Param(IntType(), b)], [ReturnStmt(return BinaryOp(Identifier(a), +, Identifier(b)))])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_int_local_variable_declaration():
     source = "void main(){ int x; }"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(IntType(), x)]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(IntType(), x)])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_float_local_variable_declaration():
     source = "void main(){ float x; }"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(FloatType(), x)]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(FloatType(), x)])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_string_local_variable_declaration():
     source = "void main(){ string s; }"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(StringType(), s)]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(StringType(), s)])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_auto_local_variable_declaration():
     source = "void main(){ auto x; }"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(auto, x)]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(auto, x)])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_auto_local_variable_with_initializer():
     source = "void main(){ auto x = 1; }"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(auto, x = IntLiteral(1))]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(auto, x = IntLiteral(1))])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_typed_int_local_variable_with_initializer():
     source = "void main(){ int x = 1; }"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(IntType(), x = IntLiteral(1))]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(IntType(), x = IntLiteral(1))])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_typed_float_local_variable_with_initializer():
     source = "void main(){ float x = 1.0; }"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(FloatType(), x = FloatLiteral(1.0))]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(FloatType(), x = FloatLiteral(1.0))])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_typed_string_local_variable_with_initializer():
     source = 'void main(){ string s = "ok"; }'
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(StringType(), s = StringLiteral('ok'))]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(StringType(), s = StringLiteral('ok'))])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_struct_typed_local_variable_declaration():
     source = "void main(){ Point p; }"
-    expected = "Program([FuncDecl(VoidType(), main, [], BlockStmt([VarDecl(StructType(Point), p)]))])"
+    expected = "Program([FuncDecl(VoidType(), main, [], [VarDecl(StructType(Point), p)])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_multiple_top_level_functions():
     source = "void f(){} void main(){}"
-    expected = "Program([FuncDecl(VoidType(), f, [], BlockStmt([])), FuncDecl(VoidType(), main, [], BlockStmt([]))])"
+    expected = "Program([FuncDecl(VoidType(), f, [], []), FuncDecl(VoidType(), main, [], [])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
 def test_struct_then_main_function():
     source = "struct A{}; void main(){}"
-    expected = "Program([StructDecl(A, []), FuncDecl(VoidType(), main, [], BlockStmt([]))])"
+    expected = "Program([StructDecl(A, []), FuncDecl(VoidType(), main, [], [])])"
     assert str(ASTGenerator(source).generate()) == expected
 
 
@@ -178,7 +178,7 @@ def test_program_with_nested_blocks_and_mixed_local_declarations():
             "VarDecl(IntType(), count = Identifier(x))",
             "VarDecl(StringType(), inner = Identifier(msg))",
             "VarDecl(FloatType(), scale = FloatLiteral(1.5))",
-            "FuncDecl(VoidType(), main, [], BlockStmt([]))",
+            "FuncDecl(VoidType(), main, [], [])",
         ]
     result = str(ASTGenerator(source).generate())
     assert "AST Generation Error" not in result

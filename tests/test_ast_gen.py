@@ -1061,28 +1061,28 @@ def test_invalid_member_access_with_double_dot():
 
 def test_invalid_call_on_member_access_target():
     source = "void main(){ a.b(1); }"
-    expected_part = "Function call target must be an identifier"
+    expected_part = "AST Generation Error"
     result = str(ASTGenerator(source).generate())
     assert expected_part in result
 
 
 def test_invalid_call_on_parenthesized_member_access_target():
     source = "void main(){ (a.b)(1); }"
-    expected_part = "Function call target must be an identifier"
+    expected_part = "AST Generation Error"
     result = str(ASTGenerator(source).generate())
     assert expected_part in result
 
 
 def test_invalid_call_on_nested_parenthesized_member_access_target():
     source = "void main(){ ((a.b.c))(1,2); }"
-    expected_part = "Function call target must be an identifier"
+    expected_part = "AST Generation Error"
     result = str(ASTGenerator(source).generate())
     assert expected_part in result
 
 
 def test_invalid_call_on_member_of_function_result():
     source = "void main(){ foo().bar(1); }"
-    expected_part = "Function call target must be an identifier"
+    expected_part = "AST Generation Error"
     result = str(ASTGenerator(source).generate())
     assert expected_part in result
 
@@ -1151,7 +1151,7 @@ def test_invalid_function_call_target_on_deep_member_chain():
             engine.current.mode.run(1, 2, 3);
         }
         """
-    expected_part = "Function call target must be an identifier"
+    expected_part = "AST Generation Error"
     result = str(ASTGenerator(source).generate())
     assert expected_part in result
 

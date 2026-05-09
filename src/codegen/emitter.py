@@ -478,7 +478,7 @@ class Emitter:
             Generated end method directive string
         """
         buffer = list()
-        buffer.append(self.jvm.emitLIMITSTACK(frame.get_max_op_stack_size()))
+        buffer.append(self.jvm.emitLIMITSTACK(max(frame.get_max_op_stack_size(), 32)))
         buffer.append(self.jvm.emitLIMITLOCAL(frame.get_max_index()))
         buffer.append(self.jvm.emitENDMETHOD())
         return "".join(buffer)
@@ -495,7 +495,7 @@ class Emitter:
             Generated JVM instruction string
         """
         frame.pop()
-        return self.jvm.emitIFGT(label)
+        return self.jvm.emitIFNE(label)
 
     def emit_if_false(self, label: int, frame) -> str:
         """
@@ -509,7 +509,7 @@ class Emitter:
             Generated JVM instruction string
         """
         frame.pop()
-        return self.jvm.emitIFLE(label)
+        return self.jvm.emitIFEQ(label)
 
     def emit_dup(self, frame) -> str:
         """
